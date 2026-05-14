@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="720" viewBox="0 0 960 720" role="img" aria-label="Placeholder notes cover">
+  <rect width="960" height="720" fill="#ecfeff"/>
+  <rect x="96" y="76" width="768" height="568" rx="18" fill="#0f766e"/>
+  <rect x="154" y="132" width="332" height="38" rx="8" fill="#ccfbf1"/>
+  <rect x="154" y="210" width="642" height="26" rx="8" fill="#99f6e4"/>
+  <rect x="154" y="266" width="520" height="26" rx="8" fill="#99f6e4"/>
+  <rect x="154" y="322" width="610" height="26" rx="8" fill="#99f6e4"/>
+  <rect x="154" y="430" width="250" height="118" rx="14" fill="#fbbf24"/>
+  <circle cx="704" cy="494" r="72" fill="#1d4ed8"/>
+  <text x="154" y="604" fill="#ffffff" font-family="Arial, sans-serif" font-size="34" font-weight="700">PLACEHOLDER PDF NOTES</text>
+</svg>

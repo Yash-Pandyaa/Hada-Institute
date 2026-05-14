@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="720" viewBox="0 0 960 720" role="img" aria-label="Placeholder test prep notes cover">
+  <rect width="960" height="720" fill="#fffbeb"/>
+  <rect x="96" y="76" width="768" height="568" rx="18" fill="#b45309"/>
+  <rect x="154" y="130" width="330" height="42" rx="8" fill="#fef3c7"/>
+  <rect x="154" y="222" width="620" height="24" rx="8" fill="#fde68a"/>
+  <rect x="154" y="278" width="510" height="24" rx="8" fill="#fde68a"/>
+  <rect x="154" y="334" width="588" height="24" rx="8" fill="#fde68a"/>
+  <circle cx="250" cy="492" r="74" fill="#0f766e"/>
+  <rect x="560" y="428" width="228" height="128" rx="18" fill="#1d4ed8"/>
+  <text x="154" y="604" fill="#ffffff" font-family="Arial, sans-serif" font-size="34" font-weight="700">PLACEHOLDER TEST PREP</text>
+</svg>
