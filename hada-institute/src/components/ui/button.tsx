@@ -15,6 +15,7 @@ export const buttonVariants = cva(
         outline: "border bg-white text-foreground shadow-sm hover:bg-muted",
         ghost: "text-foreground hover:bg-muted",
         destructive: "bg-destructive text-white shadow-sm hover:bg-red-800",
+        full: "w-full bg-primary text-primary-foreground shadow-sm hover:bg-teal-800 cursor-pointer",
       },
       size: {
         default: "h-10",

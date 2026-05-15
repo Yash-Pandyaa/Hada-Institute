@@ -2,6 +2,7 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import bcrypt from "bcryptjs";
 import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
+import GoogleProvider from "next-auth/providers/google";
 import { hasDatabaseUrl, prisma } from "@/lib/db";
 import { signInSchema } from "@/lib/validation";
 
@@ -53,12 +54,27 @@ export const authOptions: NextAuthOptions = {
         };
       },
     }),
+    // Only enable Google provider when credentials are configured.
+    ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
+      ? [
+          GoogleProvider({
+            clientId: process.env.GOOGLE_CLIENT_ID,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+          }),
+        ]
+      : []),
   ],
   callbacks: {
     jwt({ token, user }) {
+      // Credentials provider supplies `user.role`.
       if (user) {
-        token.id = user.id;
-        token.role = user.role ?? "USER";
+        // `user` type is provider-specific; keep this minimal and avoid `any`.
+        const typedUser = user as unknown as { id?: string; role?: string };
+        token.id = typedUser.id ?? "";
+        token.role =
+          typedUser.role === "ADMIN" || typedUser.role === "USER"
+            ? typedUser.role
+            : "USER";
       }
       return token;
     },
@@ -72,9 +88,9 @@ export const authOptions: NextAuthOptions = {
   },
   events: {
     async signIn({ user }) {
-      if (user.id) {
+      if (user?.id) {
         await prisma.admin.updateMany({
-          where: { userId: user.id },
+          where: { userId: user.id as string },
           data: { lastLoginAt: new Date() },
         });
       }

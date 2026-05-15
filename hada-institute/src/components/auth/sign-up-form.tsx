@@ -50,39 +50,56 @@ export function SignUpForm() {
   }
 
   return (
-    <form action={onSubmit} className="grid gap-4">
-      <div>
-        <Label htmlFor="name">Name</Label>
-        <Input autoComplete="name" id="name" name="name" required />
+    <div>
+      <form action={onSubmit} className="grid gap-4">
+        <div>
+          <Label htmlFor="name">Name</Label>
+          <Input autoComplete="name" id="name" name="name" required />
+        </div>
+        <div>
+          <Label htmlFor="email">Email</Label>
+          <Input
+            autoComplete="email"
+            id="email"
+            name="email"
+            required
+            type="email"
+          />
+        </div>
+        <div>
+          <Label htmlFor="phone">Phone</Label>
+          <Input autoComplete="tel" id="phone" name="phone" />
+        </div>
+        <div>
+          <Label htmlFor="password">Password</Label>
+          <Input
+            autoComplete="new-password"
+            id="password"
+            minLength={8}
+            name="password"
+            required
+            type="password"
+          />
+        </div>
+        <Button disabled={loading} type="submit">
+          {loading ? "Creating account..." : "Create account"}
+        </Button>
+      </form>
+
+      <div className="mt-4">
+        <div className="text-center text-sm text-muted-foreground">— or —</div>
+        <div className="mt-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() =>
+              signIn("google", { callbackUrl: "/account/library" })
+            }
+          >
+            Continue with Google
+          </Button>
+        </div>
       </div>
-      <div>
-        <Label htmlFor="email">Email</Label>
-        <Input
-          autoComplete="email"
-          id="email"
-          name="email"
-          required
-          type="email"
-        />
-      </div>
-      <div>
-        <Label htmlFor="phone">Phone</Label>
-        <Input autoComplete="tel" id="phone" name="phone" />
-      </div>
-      <div>
-        <Label htmlFor="password">Password</Label>
-        <Input
-          autoComplete="new-password"
-          id="password"
-          minLength={8}
-          name="password"
-          required
-          type="password"
-        />
-      </div>
-      <Button disabled={loading} type="submit">
-        {loading ? "Creating account..." : "Create account"}
-      </Button>
-    </form>
+    </div>
   );
 }
