@@ -1,15 +1,12 @@
 import { ProductStatus } from "@prisma/client";
 import { hasDatabaseUrl, prisma } from "@/lib/db";
-import {
-  placeholderCategories,
-  placeholderProducts,
-  placeholderSubjects,
-  type StorefrontProduct,
-} from "@/lib/placeholders";
+import type { StorefrontProduct } from "@/lib/placeholders";
 
 export async function getFeaturedProducts() {
+  // Admin-created content must be fully database-driven.
+  // If the DB is not configured, return an empty list (no placeholders).
   if (!hasDatabaseUrl) {
-    return placeholderProducts.filter((product) => product.featured);
+    return [];
   }
 
   const products = await prisma.product.findMany({
@@ -29,15 +26,7 @@ export async function getMarketplaceProducts(filters?: {
   maxPrice?: number;
 }) {
   if (!hasDatabaseUrl) {
-    return placeholderProducts.filter((product) => {
-      const query = filters?.q?.toLowerCase();
-      if (!query) {
-        return true;
-      }
-      return `${product.title} ${product.subject} ${product.category}`
-        .toLowerCase()
-        .includes(query);
-    });
+    return [];
   }
 
   const products = await prisma.product.findMany({
@@ -65,7 +54,7 @@ export async function getMarketplaceProducts(filters?: {
 
 export async function getProductBySlug(slug: string) {
   if (!hasDatabaseUrl) {
-    return placeholderProducts.find((product) => product.slug === slug) ?? null;
+    return null;
   }
 
   const product = await prisma.product.findUnique({
@@ -90,16 +79,7 @@ export async function getProductBySlug(slug: string) {
 
 export async function getFilters() {
   if (!hasDatabaseUrl) {
-    return {
-      categories: placeholderCategories.map((name) => ({
-        name,
-        slug: name.toLowerCase().replaceAll(" ", "-"),
-      })),
-      subjects: placeholderSubjects.map((name) => ({
-        name,
-        slug: name.toLowerCase().replaceAll(" ", "-"),
-      })),
-    };
+    return { categories: [], subjects: [] };
   }
 
   const [categories, subjects] = await Promise.all([
@@ -258,3 +238,235 @@ function mapProduct(product: ProductWithRelations): StorefrontProduct {
     stockStatus: product.stockStatus,
   };
 }
+
+export type AdminCmsDashboardOverview = {
+  counts: {
+    blogs: { draft: number; published: number };
+    products: { draft: number; published: number; archived: number };
+    subjectNotes: { draft: number; published: number };
+    banners: { active: number; inactive: number };
+  };
+};
+
+export async function getAdminCmsDashboardOverview(): Promise<
+  AdminCmsDashboardOverview
+> {
+  if (!hasDatabaseUrl) {
+    return {
+      counts: {
+        blogs: { draft: 0, published: 0 },
+        products: { draft: 0, published: 0, archived: 0 },
+        subjectNotes: { draft: 0, published: 0 },
+        banners: { active: 0, inactive: 0 },
+      },
+    };
+  }
+
+  const [blogs, products, subjectNotes, banners] = await Promise.all([
+    Promise.all([
+      prisma.blogPost.count({ where: { status: "DRAFT" } }),
+      prisma.blogPost.count({ where: { status: "PUBLISHED" } }),
+    ]),
+    Promise.all([
+      prisma.product.count({ where: { status: "DRAFT" } }),
+      prisma.product.count({ where: { status: "PUBLISHED" } }),
+      prisma.product.count({ where: { status: "ARCHIVED" } }),
+    ]),
+    Promise.all([
+      prisma.subjectNote.count({ where: { status: "DRAFT" } }),
+      prisma.subjectNote.count({ where: { status: "PUBLISHED" } }),
+    ]),
+    Promise.all([
+      prisma.banner.count({ where: { isActive: true } }),
+      prisma.banner.count({ where: { isActive: false } }),
+    ]),
+  ]);
+
+  return {
+    counts: {
+      blogs: { draft: blogs[0], published: blogs[1] },
+      products: { draft: products[0], published: products[1], archived: products[2] },
+      subjectNotes: { draft: subjectNotes[0], published: subjectNotes[1] },
+      banners: { active: banners[0], inactive: banners[1] },
+    },
+  };
+}
+
+type AdminRecentUploadItem = {
+  id: string;
+  type: "Product" | "SubjectNote";
+  title: string;
+  slug: string;
+  status: "DRAFT" | "PUBLISHED";
+  updatedAt: Date;
+  thumbnailUrl?: string | null;
+};
+
+export async function getAdminRecentUploads(params?: {
+  take?: number;
+}): Promise<AdminRecentUploadItem[]> {
+  const take = Math.min(params?.take ?? 8, 20);
+
+  if (!hasDatabaseUrl) {
+    return [];
+  }
+
+  const [products, subjectNotes] = await Promise.all([
+    prisma.product.findMany({
+      where: {
+        OR: [
+          { fullPdfKey: { not: null } },
+          { samplePdfUrl: { not: null } },
+          { thumbnailKey: { not: null } },
+          { thumbnailUrl: { not: null } },
+        ],
+      },
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        status: true,
+        updatedAt: true,
+        thumbnailUrl: true,
+      },
+      orderBy: { updatedAt: "desc" },
+      take,
+    }),
+    prisma.subjectNote.findMany({
+      where: {
+        OR: [
+          { pdfKey: { not: null } },
+          { pdfUrl: { not: null } },
+          { thumbnailKey: { not: null } },
+          { thumbnailUrl: { not: null } },
+        ],
+      },
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        status: true,
+        updatedAt: true,
+        thumbnailUrl: true,
+      },
+      orderBy: { updatedAt: "desc" },
+      take,
+    }),
+  ]);
+
+  const mapped: AdminRecentUploadItem[] = [
+    ...products.map((p) => ({
+      id: p.id,
+      type: "Product" as const,
+      title: p.title,
+      slug: p.slug,
+      status: p.status,
+      updatedAt: p.updatedAt,
+      thumbnailUrl: p.thumbnailUrl,
+    })),
+    ...subjectNotes.map((n) => ({
+      id: n.id,
+      type: "SubjectNote" as const,
+      title: n.title,
+      slug: n.slug,
+      status: n.status,
+      updatedAt: n.updatedAt,
+      thumbnailUrl: n.thumbnailUrl,
+    })),
+  ];
+
+  mapped.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+  return mapped.slice(0, take);
+}
+
+type AdminContentStatistics = {
+  featuredProducts: number;
+  featuredSubjectNotes: number;
+  activeBanners: number;
+  draftsTotal: number;
+  publishedTotal: number;
+};
+
+export async function getAdminContentStatistics(): Promise<
+  AdminContentStatistics
+> {
+  if (!hasDatabaseUrl) {
+    return {
+      featuredProducts: 0,
+      featuredSubjectNotes: 0,
+      activeBanners: 0,
+      draftsTotal: 0,
+      publishedTotal: 0,
+    };
+  }
+
+  const [featuredProducts, featuredSubjectNotes, activeBanners, drafts, published] =
+    await Promise.all([
+      prisma.product.count({ where: { status: "PUBLISHED", featured: true } }),
+      prisma.subjectNote.count({ where: { status: "PUBLISHED", isFeatured: true } }),
+      prisma.banner.count({ where: { isActive: true } }),
+      prisma.blogPost.count({ where: { status: "DRAFT" } }).then(async (blogDrafts) => {
+        const [productDrafts, noteDrafts] = await Promise.all([
+          prisma.product.count({ where: { status: "DRAFT" } }),
+          prisma.subjectNote.count({ where: { status: "DRAFT" } }),
+        ]);
+        return blogDrafts + productDrafts + noteDrafts;
+      }),
+      prisma.blogPost.count({ where: { status: "PUBLISHED" } }).then(async (blogPublished) => {
+        const [productPublished, notePublished] = await Promise.all([
+          prisma.product.count({ where: { status: "PUBLISHED" } }),
+          prisma.subjectNote.count({ where: { status: "PUBLISHED" } }),
+        ]);
+        return blogPublished + productPublished + notePublished;
+      }),
+    ]);
+
+  return {
+    featuredProducts,
+    featuredSubjectNotes,
+    activeBanners,
+    draftsTotal: drafts,
+    publishedTotal: published,
+  };
+}
+
+type AdminRecentActivityItem = {
+  id: string;
+  createdAt: Date;
+  actorEmail?: string | null;
+  action: string;
+  entityType: string;
+  entityId?: string | null;
+  metadata?: unknown;
+};
+
+export async function getAdminRecentActivity(params?: {
+  take?: number;
+}): Promise<AdminRecentActivityItem[]> {
+  const take = Math.min(params?.take ?? 20, 50);
+
+  if (!hasDatabaseUrl) {
+    return [];
+  }
+
+  const logs = await prisma.auditLog.findMany({
+    orderBy: { createdAt: "desc" },
+    take,
+    include: {
+      actor: {
+        select: { email: true },
+      },
+    },
+  });
+
+  return logs.map((l) => ({
+    id: l.id,
+    createdAt: l.createdAt,
+    actorEmail: l.actor?.email ?? null,
+    action: l.action,
+    entityType: l.entityType,
+    entityId: l.entityId,
+    metadata: l.metadata ?? undefined,
+  }));
+}
+

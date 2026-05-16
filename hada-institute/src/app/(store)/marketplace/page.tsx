@@ -99,12 +99,14 @@ export default async function MarketplacePage({
               type="number"
             />
           </div>
-          <button
-            className="h-11 rounded-lg bg-primary px-4 text-sm font-semibold text-white lg:col-span-4"
-            type="submit"
-          >
-            Apply filters
-          </button>
+          <div className="flex justify-center items-center lg:col-span-4 md:col-span-4">
+            <button
+              className="h-11 rounded-lg bg-primary px-4 text-sm font-semibold text-white lg:col-span-4 max-w-lg cursor-pointer"
+              type="submit"
+            >
+              Apply filters
+            </button>
+          </div>
         </form>
       </div>
       {products.length > 0 ? (

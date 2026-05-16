@@ -59,6 +59,11 @@ enum BlogStatus {
   PUBLISHED
 }
 
+enum NoteStatus {
+  DRAFT
+  PUBLISHED
+}
+
 model User {
   id              String           @id @default(cuid())
   name            String?
@@ -151,7 +156,9 @@ model Subject {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   products    Product[]
+  notes        SubjectNote[]
 }
+
 
 model Product {
   id              String           @id @default(cuid())
@@ -381,6 +388,41 @@ model Banner {
 
   @@index([placement, isActive])
 }
+
+model SubjectNote {
+  id              String     @id @default(cuid())
+  subjectId       String
+  subject         Subject    @relation(fields: [subjectId], references: [id], onDelete: Restrict)
+
+  title           String
+  slug            String     @unique
+  description     String?    @db.Text
+  tags            String[]
+
+  excerpt         String?
+
+  price           Int
+  isFeatured      Boolean    @default(false)
+
+  status          NoteStatus @default(DRAFT)
+  publishedAt     DateTime?
+
+  pdfUrl          String?
+  pdfKey          String?
+
+  thumbnailUrl    String?
+  thumbnailKey    String?
+
+  previewImages   String[]
+
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  @@index([subjectId])
+  @@index([status, publishedAt])
+  @@index([isFeatured])
+}
+
 
 model AuditLog {
   id         String   @id @default(cuid())

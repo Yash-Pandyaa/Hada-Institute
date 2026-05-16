@@ -5,12 +5,20 @@ import bcrypt from "bcryptjs";
 
 loadEnvConfig(process.cwd());
 
-const databaseUrl =
-  process.env.DATABASE_URL ??
-  "postgresql://postgres:postgres@localhost:5432/hada_institute?schema=public";
+const databaseUrl = process.env.DATABASE_URL;
+if (!databaseUrl) {
+  throw new Error(
+    "DATABASE_URL is not set. Provide it via env (e.g., Supabase connection string).",
+  );
+}
+
+// Supabase requires SSL.
+const supabaseSslUrl = databaseUrl.includes("sslmode=")
+  ? databaseUrl
+  : `${databaseUrl}${databaseUrl.includes("?") ? "&" : "?"}sslmode=require`;
 
 const prisma = new PrismaClient({
-  adapter: new PrismaPg(databaseUrl),
+  adapter: new PrismaPg(supabaseSslUrl),
 });
 
 async function main() {
@@ -538,7 +546,9 @@ main()
         [
           "Cannot seed because PostgreSQL is not reachable.",
           `DATABASE_URL: ${databaseUrl}`,
+
           "",
+
           "Start PostgreSQL first, then run:",
           "  npm run prisma:migrate",
           "  npm run db:seed",
