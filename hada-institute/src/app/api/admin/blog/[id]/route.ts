@@ -19,11 +19,11 @@ type UpdatePayload = z.infer<typeof updateSchema>;
 
 export async function GET(
   _request: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     await requireAdmin();
-    const { id } = params;
+    const { id } = await params;
 
     const post = await prisma.blogPost.findUnique({
       where: { id },
@@ -44,11 +44,11 @@ export async function GET(
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const session = await requireAdmin();
-    const { id } = params;
+    const { id } = await params;
 
     const parsed = updateSchema.parse(await request.json());
     const payload: UpdatePayload = parsed;
@@ -112,11 +112,11 @@ export async function PATCH(
 
 export async function DELETE(
   _request: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const session = await requireAdmin();
-    const { id } = params;
+    const { id } = await params;
 
     const post = await prisma.blogPost.findUnique({ where: { id } });
     if (!post) {

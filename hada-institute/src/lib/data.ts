@@ -297,7 +297,7 @@ type AdminRecentUploadItem = {
   type: "Product" | "SubjectNote";
   title: string;
   slug: string;
-  status: "DRAFT" | "PUBLISHED";
+  status: "DRAFT" | "PUBLISHED" | "ARCHIVED";
   updatedAt: Date;
   thumbnailUrl?: string | null;
 };
@@ -379,7 +379,7 @@ export async function getAdminRecentUploads(params?: {
   return mapped.slice(0, take);
 }
 
-type AdminContentStatistics = {
+export type AdminContentStatistics = {
   featuredProducts: number;
   featuredSubjectNotes: number;
   activeBanners: number;

@@ -1,8 +1,9 @@
-﻿import type { BlogStatus } from "@prisma/client";
+import type { BlogStatus } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { jsonError, slugify } from "@/lib/utils";
+import { slugify } from "@/lib/utils";
+import { jsonError } from "@/lib/security";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
@@ -51,7 +52,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ post }, { status: 201 });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return jsonError(error.errors[0].message, 400);
+      return jsonError(error.issues[0]?.message || "Validation error", 400);
     }
     return jsonError(
       error instanceof Error ? error.message : "Unable to submit blog post.",

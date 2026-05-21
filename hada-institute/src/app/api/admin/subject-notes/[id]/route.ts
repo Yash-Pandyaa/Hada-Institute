@@ -31,13 +31,14 @@ type UpdatePayload = z.infer<typeof updateSchema>;
 
 export async function GET(
   _request: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     await requireAdmin();
+    const resolvedParams = await params;
 
     const note = await prisma.subjectNote.findUnique({
-      where: { id: params.id },
+      where: { id: resolvedParams.id },
       include: { subject: true },
     });
 
@@ -56,16 +57,17 @@ export async function GET(
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const session = await requireAdmin();
+    const resolvedParams = await params;
 
     const parsed = updateSchema.parse(await request.json());
     const payload: UpdatePayload = parsed;
 
     const current = await prisma.subjectNote.findUnique({
-      where: { id: params.id },
+      where: { id: resolvedParams.id },
     });
     if (!current) {
       return jsonError("Not found", 404);
@@ -76,7 +78,7 @@ export async function PATCH(
         where: { slug: payload.slug },
         select: { id: true },
       });
-      if (slugOwner && slugOwner.id !== params.id) {
+      if (slugOwner && slugOwner.id !== resolvedParams.id) {
         return jsonError("Slug already exists", 409);
       }
     }
@@ -90,7 +92,7 @@ export async function PATCH(
         : null;
 
     const updated = await prisma.subjectNote.update({
-      where: { id: params.id },
+      where: { id: resolvedParams.id },
       data: {
         subjectId: payload.subjectId ?? current.subjectId,
         title: payload.title ?? current.title,
@@ -148,26 +150,27 @@ export async function PATCH(
 
 export async function DELETE(
   _request: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const session = await requireAdmin();
+    const resolvedParams = await params;
 
     const current = await prisma.subjectNote.findUnique({
-      where: { id: params.id },
+      where: { id: resolvedParams.id },
     });
     if (!current) {
       return jsonError("Not found", 404);
     }
 
-    await prisma.subjectNote.delete({ where: { id: params.id } });
+    await prisma.subjectNote.delete({ where: { id: resolvedParams.id } });
 
     await prisma.auditLog.create({
       data: {
         actorId: session.user.id,
         action: "SUBJECT_NOTE_DELETE",
         entityType: "SubjectNote",
-        entityId: params.id,
+        entityId: resolvedParams.id,
       },
     });
 
